@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 int main(int argc, char *argv[]) {
     int i = 1;
@@ -23,5 +24,5 @@ int main(int argc, char *argv[]) {
     if (newline)
         write(STDOUT_FILENO, "\n", 1);
 
-    return 0;
+    exit(0);
 }
