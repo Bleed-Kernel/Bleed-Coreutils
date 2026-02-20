@@ -1,5 +1,3 @@
-#define _POSIX_C_SOURCE 200809L
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -7,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fs/file.h>
 
 #define BUF_SIZE 4096
 
