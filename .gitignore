@@ -1,0 +1,6 @@
+bin/
+external/
+sysroot/
+.vscode
+
+build
