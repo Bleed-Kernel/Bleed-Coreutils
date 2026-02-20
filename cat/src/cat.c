@@ -1,47 +1,80 @@
-#include <stdint.h>
+#define _POSIX_C_SOURCE 200809L
+
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <syscalls/mmap.h>
+#include <unistd.h>
 
 #define BUF_SIZE 4096
 
+static int cat_fd(int fd) {
+    char buf[BUF_SIZE];
+
+    for (;;) {
+        ssize_t r = read(fd, buf, sizeof(buf));
+        if (r == 0)
+            return 0;
+
+        if (r < 0)
+            return -1;
+
+        ssize_t total = 0;
+        while (total < r) {
+            ssize_t w = write(STDOUT_FILENO, buf + total, r - total);
+            if (w < 0)
+                return -1;
+            total += w;
+        }
+    }
+}
+
 int main(int argc, char **argv) {
-    if (argc < 2) {
-        printf("bad usage: cat <path>\n");
-        exit(EXIT_FAILURE);
+    int status = 0;
+
+    if (argc == 1) {
+        if (cat_fd(STDIN_FILENO) < 0) {
+            perror("cat");
+            exit(EXIT_FAILURE);
+        }
+        exit(EXIT_SUCCESS);
     }
 
-    char targetpath[256];
-    strncpy(targetpath, argv[1], sizeof(targetpath));
-    FILE *f = fopen(targetpath, "rb");
-    if (!f) {
-        printf("cat: cannot open %s\n", argv[1]);
-        exit(EXIT_FAILURE);
-    }
+    for (int i = 1; i < argc; ++i) {
+        int fd;
 
-    void *buf = _mmap(BUF_SIZE);
-    if ((uintptr_t)buf < 0x1000) {
-        printf("cat: buffer allocation failed\n");
-        fclose(f);
-        exit(EXIT_FAILURE);
-    }
-
-    while (1) {
-        size_t n = fread(buf, 1, BUF_SIZE, f);
-        if (n == 0) {
-            break;
+        if (strcmp(argv[i], "-") == 0) {
+            fd = STDIN_FILENO;
+        } else {
+            char path[PATH_MAX];
+            size_t len = strlen(argv[i]);
+            if (len == PATH_MAX) {
+                fprintf(stderr, "cat: %s: File name too long\n", argv[i]);
+                status = 1;
+                continue;
+            }
+            memcpy(path, argv[i], len + 1);
+            fd = open(path, O_RDONLY);
+            if (fd < 0) {
+                fprintf(stderr, "cat: %s: %s\n",
+                        argv[i], strerror(errno));
+                status = 1;
+                continue;
+            }
         }
 
-        size_t w = fwrite(buf, 1, n, stdout);
-        if (w != n) {
-            printf("cat: write error\n");
-            break;
+        if (cat_fd(fd) < 0) {
+            fprintf(stderr, "cat: %s: %s\n",
+                    strcmp(argv[i], "-") == 0 ? "stdin" : argv[i],
+                    strerror(errno));
+            status = 1;
         }
+
+        if (fd != STDIN_FILENO)
+            close(fd);
     }
 
-    printf("\n");
-    fclose(f);
-    exit(EXIT_SUCCESS);
+    exit(status);
 }
