@@ -33,7 +33,10 @@ static int cat_fd(int fd) {
     }
 }
 
-static int cat_ipc_if_present(void) {
+static int cat_ipc_if_present(int *consumed) {
+    if (consumed)
+        *consumed = 0;
+
     ipc_message_t msg;
     if (ipc_recv(&msg) < 0)
         return 0;
@@ -63,6 +66,8 @@ static int cat_ipc_if_present(void) {
         if (fd >= 0) {
             int rc = cat_fd(fd);
             close(fd);
+            if (consumed)
+                *consumed = 1;
             _munmap((void *)(uintptr_t)msg.addr);
             return rc;
         }
@@ -80,16 +85,22 @@ static int cat_ipc_if_present(void) {
         }
     }
 
+    if (consumed)
+        *consumed = 1;
     _munmap((void *)(uintptr_t)msg.addr);
     return 0;
 }
 
 int main(int argc, char **argv) {
     int status = 0;
-    if (cat_ipc_if_present() < 0) {
+    int ipc_consumed = 0;
+    if (cat_ipc_if_present(&ipc_consumed) < 0) {
         perror("cat");
         exit(EXIT_FAILURE);
     }
+
+    if (argc == 1 && ipc_consumed)
+        exit(EXIT_SUCCESS);
 
     if (argc == 1) {
         if (cat_fd(STDIN_FILENO) < 0) {
