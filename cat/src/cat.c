@@ -44,11 +44,33 @@ static int cat_ipc_if_present(void) {
     while (n < max && payload[n] != '\0')
         n++;
 
-    if (n > 0) {
-        ssize_t w = write(STDOUT_FILENO, payload, n);
-        if (w < 0 || (size_t)w != n) {
+    if (n > 0 && n < PATH_MAX) {
+        char path[PATH_MAX];
+        memcpy(path, payload, n);
+        path[n] = '\0';
+
+        const char *arg = path;
+        if (arg[0] == '<' && arg[1] != '\0')
+            arg++;
+
+        int fd = open(arg, O_RDONLY);
+        if (fd >= 0) {
+            int rc = cat_fd(fd);
+            close(fd);
             _munmap((void *)(uintptr_t)msg.addr);
-            return -1;
+            return rc;
+        }
+    }
+
+    if (n > 0) {
+        ssize_t total = 0;
+        while ((size_t)total < n) {
+            ssize_t w = write(STDOUT_FILENO, payload + total, n - (size_t)total);
+            if (w < 0) {
+                _munmap((void *)(uintptr_t)msg.addr);
+                return -1;
+            }
+            total += w;
         }
     }
 
