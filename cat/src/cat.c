@@ -49,6 +49,12 @@ static int cat_ipc_if_present(void) {
         memcpy(path, payload, n);
         path[n] = '\0';
 
+        while (n > 0 && (path[n - 1] == '\n' || path[n - 1] == '\r' ||
+                         path[n - 1] == ' '  || path[n - 1] == '\t')) {
+            path[n - 1] = '\0';
+            n--;
+        }
+
         const char *arg = path;
         if (arg[0] == '<' && arg[1] != '\0')
             arg++;
