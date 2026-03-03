@@ -1,7 +1,6 @@
 BIN_DIR := bin
 
-BLIBC_REPO = https://codeberg.org/Bleed-Kernel/blibc.git
-BLIBC_DIR  = external/blibc
+BLIBC_DIR ?= ../blibc
 SYSROOT    = sysroot
 
 PROGRAM_MAKEFILES := $(wildcard */Makefile)
@@ -13,9 +12,6 @@ all: blibc $(PROGRAMS)
 
 blibc:
 	@echo "[BLIBC] Preparing blibc"
-	@if [ ! -d "$(BLIBC_DIR)" ]; then \
-		git clone $(BLIBC_REPO) $(BLIBC_DIR); \
-	fi
 	@$(MAKE) -C $(BLIBC_DIR)
 	@mkdir -p $(SYSROOT)
 	@cp -r $(BLIBC_DIR)/sysroot/* $(SYSROOT)/
@@ -38,4 +34,4 @@ clean:
 	@rm -rf $(BIN_DIR)
 
 distclean:
-	@rm -rf $(BIN_DIR) $(SYSROOT) external
+	@rm -rf $(BIN_DIR) $(SYSROOT)
