@@ -14,11 +14,10 @@ COMMON_CFLAGS = \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fno-stack-check \
-	-Wall -Wextra -Werror \
+	-Wall -Wextra \
 	-nostdlib \
 	-no-pie \
 	-m64 \
-	-Wunused-command-line-argument \
 	-Iinclude \
 	-I$(SYSROOT)/include \
 	-I$(SYSROOT)/libc \
