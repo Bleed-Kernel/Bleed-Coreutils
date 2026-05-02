@@ -18,7 +18,6 @@ COMMON_CFLAGS = \
 	-nostdlib \
 	-no-pie \
 	-m64 \
-	-Wunused-command-line-argument \
 	-Iinclude \
 	-I$(SYSROOT)/include \
 	-I$(SYSROOT)/libc \
