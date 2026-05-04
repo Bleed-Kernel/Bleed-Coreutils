@@ -1,8 +1,8 @@
 ELF_TARGET_64 = echo
 
-CC ?= x86_64-elf-gcc
+CC := x86_64-elf-gcc
 
-SYSROOT ?= ../sysroot
+SYSROOT := ../sysroot
 
 ELF_BIN_DIR_64 = bin
 ELF_OBJ_DIR_64 = $(ELF_BIN_DIR_64)/obj

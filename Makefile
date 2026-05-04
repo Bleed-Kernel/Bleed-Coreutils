@@ -1,6 +1,6 @@
 BIN_DIR := bin
 
-BLIBC_DIR ?= ../blibc
+BLIBC_DIR := ../blibc
 SYSROOT    = sysroot
 
 PROGRAM_MAKEFILES := $(wildcard */Makefile)
