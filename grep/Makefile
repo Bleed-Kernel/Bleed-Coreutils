@@ -1,6 +1,6 @@
 ELF_TARGET_64 = grep
 
-CC := gcc
+CC := x86_64-elf-gcc
 
 SYSROOT := ../sysroot
 
