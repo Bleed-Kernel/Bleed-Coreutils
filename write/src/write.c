@@ -18,10 +18,10 @@ int main(int argc, const char** argv){
     }
     
     char filepath[4096];
-    strncpy(filepath, argv[1], sizeof(filepath));
+    strncpy(filepath, argv[2], sizeof(filepath));
 
     char value[4096];
-    strncpy(value, argv[2], sizeof(value));
+    strncpy(value, argv[1], sizeof(value));
 
     int fd = (int)_open(filepath, O_RDWR);
     if (fd < 0){
