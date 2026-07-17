@@ -8,7 +8,46 @@
 #include <syscalls/close.h>
 #include <syscalls/exit.h>
 
-#define EXPECTED_ARGS   4
+#define MIN_ARGS   4
+#define MAX_ARGS   5
+
+static int get_permission(const char* perm){
+    int flags = 0;
+    int matched_any = 0;
+
+    char work[64];
+    strncpy(work, perm, sizeof(work) - 1);
+    work[sizeof(work) - 1] = '\0';
+
+    char* token = strtok(work, ",");
+    while (token != NULL){
+        if (strcmp(token, "rd") == 0){
+            flags |= O_RDONLY;
+        }else if (strcmp(token, "wr") == 0){
+            flags |= O_WRONLY;
+        }else if (strcmp(token, "rdwr") == 0){
+            flags |= O_RDWR;
+        }else if (strcmp(token, "mode") == 0){
+            flags |= O_MODE;
+        }else if (strcmp(token, "creat") == 0){
+            flags |= O_CREAT;
+        }else if (strcmp(token, "trunc") == 0){
+            flags |= O_TRUNC;
+        }else if (strcmp(token, "append") == 0){
+            flags |= O_APPEND;
+        }else{
+            return -1;
+        }
+        matched_any = 1;
+        token = strtok(NULL, ",");
+    }
+
+    if (!matched_any){
+        return -1;
+    }
+
+    return flags;
+}
 
 static int parse_request(const char* str, unsigned long* out){
     if (!str || *str == '\0'){
@@ -26,9 +65,20 @@ static int parse_request(const char* str, unsigned long* out){
 }
 
 int main(int argc, const char** argv){
-    if (argc != EXPECTED_ARGS){
-        printf("Bad Argument Count, expected %i, got %i (ioctl <device> <request> <arg>)\n", EXPECTED_ARGS, argc);
+    if (argc != MIN_ARGS && argc != MAX_ARGS){
+        printf("Bad Argument Count, expected %i or %i, got %i (ioctl <device> <request> <arg> [permission])\n", MIN_ARGS, MAX_ARGS, argc);
         _exit(1);
+    }
+
+    int open_flags;
+    if (argc == MAX_ARGS){
+        open_flags = get_permission(argv[4]);
+        if (open_flags == -1){
+            printf("Bad Permission Level, comma-separated combination of: rd, wr, rdwr, mode, creat, trunc, append\n");
+            _exit(1);
+        }
+    }else{
+        open_flags = O_RDWR;
     }
 
     char filepath[4096];
@@ -54,7 +104,7 @@ int main(int argc, const char** argv){
         ioctl_arg = (void*)argbuf;
     }
 
-    int fd = (int)_open(filepath, O_RDWR);
+    int fd = (int)_open(filepath, open_flags);
     if (fd < 0){
         printf("File or device %s not found or could not be opened (fd=%d)!\n", filepath, fd);
         _exit(1);
