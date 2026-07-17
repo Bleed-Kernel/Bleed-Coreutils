@@ -51,7 +51,7 @@ int get_permission(char perm[64]){
 //quick and dirty program for writing directly to file descriptors or devices.
 int main(int argc, const char** argv){
     if (argc != EXPECTED_ARGS){
-        printf("Bad Argument Count, expected %i, got %i (write <value> <destination> <permission[rd,wr,rdwr,mode,creat,trunc,append]>)\n", EXPECTED_ARGS, argc);
+        printf("Bad Argument Count, expected %i, got %i (write <destination> <value> <permission[rd,wr,rdwr,mode,creat,trunc,append]>)\n", EXPECTED_ARGS, argc);
         _exit(1);
     }
 
@@ -65,13 +65,13 @@ int main(int argc, const char** argv){
         _exit(1);
     }
 
-    char filepath[4096];
-    strncpy(filepath, argv[2], sizeof(filepath) - 1);
-    filepath[sizeof(filepath) - 1] = '\0';
-
     char value[4096];
-    strncpy(value, argv[1], sizeof(value) - 1);
+    strncpy(value, argv[2], sizeof(value) - 1);
     value[sizeof(value) - 1] = '\0';
+
+    char filepath[4096];
+    strncpy(filepath, argv[1], sizeof(filepath) - 1);
+    filepath[sizeof(filepath) - 1] = '\0';
 
     int fd = (int)_open(filepath, permission_level);
     if (fd < 0){
