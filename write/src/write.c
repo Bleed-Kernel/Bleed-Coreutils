@@ -4,11 +4,14 @@
 #include <fs/file.h>
 #include <stdlib.h>
 #include <syscalls/write.h>
+#include <syscalls/read.h>
 #include <syscalls/open.h>
 #include <syscalls/close.h>
 #include <syscalls/exit.h>
 
 #define EXPECTED_ARGS   4
+#define STDIN_FD        0
+#define STREAM_BUF_SIZE 4096
 
 int get_permission(char perm[64]){
     int flags = 0;
@@ -48,10 +51,44 @@ int get_permission(char perm[64]){
     return flags;
 }
 
+static long write_all(int fd, const char *buf, size_t len){
+    size_t total = 0;
+    while (total < len){
+        long w = _write(fd, buf + total, (long)(len - total));
+        if (w < 0) return w;
+        if (w == 0) break;
+        total += (size_t)w;
+    }
+    return (long)total;
+}
+
+//copy stdin into fd until EOF so pipes can move data of any size
+static int stream_stdin(int fd){
+    char buf[STREAM_BUF_SIZE];
+    for (;;){
+        long r = _read(STDIN_FD, buf, sizeof(buf));
+        if (r == 0) return 0;
+        if (r < 0){
+            printf("Read from stdin failed with error %ld\n", r);
+            return -1;
+        }
+
+        long w = write_all(fd, buf, (size_t)r);
+        if (w < 0){
+            printf("Write failed with error %ld\n", w);
+            return -1;
+        }
+        if (w != r){
+            printf("Partial write: wrote %ld of %ld bytes\n", w, r);
+            return -1;
+        }
+    }
+}
+
 //quick and dirty program for writing directly to file descriptors or devices.
 int main(int argc, const char** argv){
     if (argc != EXPECTED_ARGS){
-        printf("Bad Argument Count, expected %i, got %i (write <destination> <value> <permission[rd,wr,rdwr,mode,creat,trunc,append]>)\n", EXPECTED_ARGS, argc);
+        printf("Bad Argument Count, expected %i, got %i (write <destination> <value|-> <permission[rd,wr,rdwr,mode,creat,trunc,append]>, - reads the value from stdin)\n", EXPECTED_ARGS, argc);
         _exit(1);
     }
 
@@ -65,28 +102,28 @@ int main(int argc, const char** argv){
         _exit(1);
     }
 
-    char value[4096];
-    strncpy(value, argv[2], sizeof(value) - 1);
-    value[sizeof(value) - 1] = '\0';
-
-    char filepath[4096];
-    strncpy(filepath, argv[1], sizeof(filepath) - 1);
-    filepath[sizeof(filepath) - 1] = '\0';
-
+    const char *filepath = argv[1];
     int fd = (int)_open(filepath, permission_level);
     if (fd < 0){
         printf("File or device %s not found or could not be opened (fd=%d)!\n", filepath, fd);
         _exit(1);
     }
 
-    size_t value_len = strlen(value);
-    ssize_t written = _write(fd, value, value_len);
-    if (written < 0){
-        printf("Write failed with error %ld\n", (long)written);
-        _close(fd);
-        _exit(1);
-    }else if ((size_t)written != value_len){
-        printf("Partial write: wrote %ld of %zu bytes\n", (long)written, value_len);
+    if (strcmp(argv[2], "-") == 0){
+        if (stream_stdin(fd) < 0){
+            _close(fd);
+            _exit(1);
+        }
+    }else{
+        size_t value_len = strlen(argv[2]);
+        long written = write_all(fd, argv[2], value_len);
+        if (written < 0){
+            printf("Write failed with error %ld\n", written);
+            _close(fd);
+            _exit(1);
+        }else if ((size_t)written != value_len){
+            printf("Partial write: wrote %ld of %zu bytes\n", written, value_len);
+        }
     }
 
     int close_result = _close(fd);
