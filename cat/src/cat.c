@@ -5,9 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <fs/file.h>
 #include <ipc.h>
-#include <syscalls/munmap.h>
+#include <syscalls.h>
 
 #define BUF_SIZE 4096
 #define IPC_PAGE_SIZE 4096UL

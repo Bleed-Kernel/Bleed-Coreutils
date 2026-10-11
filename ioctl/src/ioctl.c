@@ -2,11 +2,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <fs/file.h>
-#include <syscalls/ioctl.h>
-#include <syscalls/open.h>
-#include <syscalls/close.h>
-#include <syscalls/exit.h>
+#include <fcntl.h>
+#include <syscalls.h>
 
 #define MIN_ARGS   4
 #define MAX_ARGS   5

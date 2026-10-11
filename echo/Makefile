@@ -20,7 +20,7 @@ COMMON_CFLAGS = \
 	-m64 \
 	-Iinclude \
 	-I$(SYSROOT)/include \
-	-I$(SYSROOT)/libc \
+	-I$(SYSROOT)/include/bleed \
 	-nostdinc
 
 LDFLAGS = \

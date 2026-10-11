@@ -1,13 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <fs/file.h>
+#include <fcntl.h>
 #include <stdlib.h>
-#include <syscalls/write.h>
-#include <syscalls/read.h>
-#include <syscalls/open.h>
-#include <syscalls/close.h>
-#include <syscalls/exit.h>
+#include <syscalls.h>
 
 #define EXPECTED_ARGS   4
 #define STDIN_FD        0
