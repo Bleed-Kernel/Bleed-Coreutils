@@ -20,7 +20,7 @@ blibc:
 	@mkdir -p $(SYSROOT)
 	@cp -r $(BLIBC_DIR)/sysroot/* $(SYSROOT)/
 
-$(PROGRAMS):
+$(PROGRAMS): blibc
 	@echo "[COREUTILS] Building $@"
 	@$(MAKE) -C $@ SYSROOT=../$(SYSROOT)
 	@if [ -f "$@/bin/$@" ]; then \
