@@ -37,5 +37,5 @@ clean:
 	done
 	@rm -rf $(BIN_DIR)
 
-distclean:
+distclean: clean
 	@rm -rf $(BIN_DIR) $(SYSROOT) external
