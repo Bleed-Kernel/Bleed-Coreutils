@@ -41,14 +41,19 @@ static void count(FILE *f, counts_t *c) {
 }
 
 static void print(const counts_t *c, const char *name) {
-    int width = 7;
-    if (show_lines)   printf("%*llu ", width, c->lines);
-    if (show_words)   printf("%*llu ", width, c->words);
-    if (show_chars)   printf("%*llu ", width, c->chars);
-    if (show_bytes)   printf("%*llu ", width, c->bytes);
-    if (show_longest) printf("%*llu ", width, c->longest);
+    unsigned long long vals[5];
+    int n = 0;
+    if (show_lines)   vals[n++] = c->lines;
+    if (show_words)   vals[n++] = c->words;
+    if (show_chars)   vals[n++] = c->chars;
+    if (show_bytes)   vals[n++] = c->bytes;
+    if (show_longest) vals[n++] = c->longest;
+
+    int width = (n == 1 && !name) ? 1 : 7;
+    for (int i = 0; i < n; i++)
+        printf("%s%*llu", i ? " " : "", width, vals[i]);
     if (name)
-        printf("%s", name);
+        printf(" %s", name);
     putchar('\n');
 }
 
