@@ -261,7 +261,7 @@ static int eval(node_t *n, const char *path, const struct stat *st) {
 
 static void visit(const char *path, node_t *expr, int depth) {
     struct stat st;
-    if (stat(path, &st) < 0) {
+    if (lstat(path, &st) < 0) {
         status = warn("'%s': %s", path, strerror(errno));
         return;
     }

@@ -17,7 +17,7 @@ static int remove_one(const char *path) {
         return warn("refusing to remove '.' or '..' directory: skipping '%s'", path);
 
     struct stat st;
-    if (stat(path, &st) < 0) {
+    if (lstat(path, &st) < 0) {
         if (force && errno == ENOENT)
             return 0;
         return warn("cannot remove '%s': %s", path, strerror(errno));

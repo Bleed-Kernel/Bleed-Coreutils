@@ -12,7 +12,7 @@ static int verbose;
 
 static int move(const char *src, const char *dst) {
     struct stat sst, dst_st;
-    if (stat(src, &sst) < 0)
+    if (lstat(src, &sst) < 0)
         return warn("cannot stat '%s': %s", src, strerror(errno));
 
     int exists = stat(dst, &dst_st) == 0;

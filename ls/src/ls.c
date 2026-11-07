@@ -11,11 +11,13 @@
 
 #define COLOR_DIR "\x1b[1;34m"
 #define COLOR_DEV "\x1b[1;33m"
+#define COLOR_LNK "\x1b[1;36m"
 #define COLOR_END "\x1b[0m"
 
 typedef struct {
     char        *name;
     struct stat  st;
+    char        *link;      // where a link points, for -l
 } entry_t;
 
 static int all;
@@ -46,6 +48,17 @@ static int entry_cmp(const void *a, const void *b) {
     return reverse ? -r : r;
 }
 
+static char *read_link(const char *path, const struct stat *st) {
+    if (!S_ISLNK(st->st_mode) || !long_list)
+        return NULL;
+    char buf[PATH_MAX];
+    ssize_t n = readlink(path, buf, sizeof(buf) - 1);
+    if (n < 0)
+        return NULL;
+    buf[n] = '\0';
+    return strdup(buf);
+}
+
 static void mode_string(mode_t mode, char *out) {
     out[0] = S_ISDIR(mode) ? 'd' : S_ISCHR(mode) ? 'c' : S_ISBLK(mode) ? 'b' :
              S_ISFIFO(mode) ? 'p' : S_ISLNK(mode) ? 'l' : '-';
@@ -62,6 +75,8 @@ static const char *color_for(mode_t mode) {
         return COLOR_DIR;
     if (S_ISCHR(mode) || S_ISBLK(mode))
         return COLOR_DEV;
+    if (S_ISLNK(mode))
+        return COLOR_LNK;
     return NULL;
 }
 
@@ -70,6 +85,8 @@ static char type_char(mode_t mode) {
         return '/';
     if (S_ISFIFO(mode))
         return '|';
+    if (S_ISLNK(mode))
+        return '@';
     return 0;
 }
 
@@ -126,6 +143,8 @@ static void print_long(entry_t *list, int n) {
 
         printf("%s %lu root root %*s %s ", mode, (unsigned long)st->st_nlink, size_w, buf, date);
         print_name(&list[i]);
+        if (list[i].link)
+            printf(" -> %s", list[i].link);
         putchar('\n');
     }
 }
@@ -177,8 +196,10 @@ static void print_list(entry_t *list, int n) {
 }
 
 static void free_entries(entry_t *list, int n) {
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++) {
         free(list[i].name);
+        free(list[i].link);
+    }
     free(list);
 }
 
@@ -199,8 +220,9 @@ static int list_directory(const char *path, int show_header, int first) {
             continue;
 
         list[n].name = strdup(names[i]);
-        if (stat(full, &list[n].st) < 0)
+        if (lstat(full, &list[n].st) < 0)
             memset(&list[n].st, 0, sizeof(struct stat));
+        list[n].link = read_link(full, &list[n].st);
         n++;
     }
     free_list(names, count);
@@ -297,17 +319,21 @@ int main(int argc, char **argv) {
     int ndirs = 0;
 
     for (int i = 0; i < nargs; i++) {
-        struct stat st;
-        if (stat(args[i], &st) < 0) {
+        // a link named on the command line is followed into a folder, except with -l like gnu ls
+        struct stat st, to;
+        if (lstat(args[i], &st) < 0) {
             status = 2;
             warn("cannot access '%s': %s", args[i], strerror(errno));
             continue;
         }
+        if (S_ISLNK(st.st_mode) && !long_list && stat(args[i], &to) == 0)
+            st = to;
         if (S_ISDIR(st.st_mode) && !dir_itself) {
             dirs[ndirs++] = args[i];
         } else {
             files[nfiles].name = strdup(args[i]);
             files[nfiles].st   = st;
+            files[nfiles].link = read_link(args[i], &st);
             nfiles++;
         }
     }

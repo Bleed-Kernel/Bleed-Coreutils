@@ -9,8 +9,20 @@
 
 int copy_tree(const char *src, const char *dst) {
     struct stat st;
-    if (stat(src, &st) < 0)
+    if (lstat(src, &st) < 0)
         return warn("cannot stat '%s': %s", src, strerror(errno));
+
+    if (S_ISLNK(st.st_mode)) {
+        char target[PATH_MAX];
+        ssize_t n = readlink(src, target, sizeof(target) - 1);
+        if (n < 0)
+            return warn("cannot read link '%s': %s", src, strerror(errno));
+        target[n] = '\0';
+        unlink(dst);
+        if (symlink(target, dst) < 0)
+            return warn("cannot create symbolic link '%s': %s", dst, strerror(errno));
+        return 0;
+    }
 
     if (!S_ISDIR(st.st_mode)) {
         int in = open(src, O_RDONLY);
@@ -56,7 +68,7 @@ int copy_tree(const char *src, const char *dst) {
 
 int remove_tree(const char *path, int verbose) {
     struct stat st;
-    if (stat(path, &st) < 0)
+    if (lstat(path, &st) < 0)
         return warn("cannot remove '%s': %s", path, strerror(errno));
 
     int status = 0;

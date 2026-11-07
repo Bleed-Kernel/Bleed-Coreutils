@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     int status = 0;
     for (int i = optind; i < argc; i++) {
         struct stat st;
-        if (stat(argv[i], &st) < 0) {
+        if (lstat(argv[i], &st) < 0) {
             status = warn("cannot stat '%s': %s", argv[i], strerror(errno));
             continue;
         }
@@ -107,12 +107,20 @@ int main(int argc, char **argv) {
         }
 
         char mode[11];
-        mode[0] = S_ISDIR(st.st_mode) ? 'd' : S_ISCHR(st.st_mode) ? 'c' : S_ISFIFO(st.st_mode) ? 'p' : '-';
+        mode[0] = S_ISDIR(st.st_mode) ? 'd' : S_ISCHR(st.st_mode) ? 'c' : S_ISFIFO(st.st_mode) ? 'p' :
+                  S_ISLNK(st.st_mode) ? 'l' : '-';
         for (int b = 0; b < 9; b++)
             mode[b + 1] = (st.st_mode & (0400 >> b)) ? "rwxrwxrwx"[b] : '-';
         mode[10] = '\0';
 
-        printf("  File: %s\n", argv[i]);
+        char target[4096];
+        ssize_t tlen = S_ISLNK(st.st_mode) ? readlink(argv[i], target, sizeof(target) - 1) : -1;
+        if (tlen >= 0) {
+            target[tlen] = '\0';
+            printf("  File: %s -> %s\n", argv[i], target);
+        } else {
+            printf("  File: %s\n", argv[i]);
+        }
         printf("  Size: %-15lld Blocks: %-10ld IO Block: %-6ld %s\n",
                (long long)st.st_size, st.st_blocks, st.st_blksize, type_name(st.st_mode));
         printf("Device: %-15llu Inode: %-11llu Links: %lu\n",

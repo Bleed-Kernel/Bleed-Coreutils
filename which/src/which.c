@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 
     const char *path = getenv("PATH");
     if (!path)
-        path = "/initrd/bin";
+        path = "/usr/local/bin:/bin";
 
     int status = 0;
     for (int i = optind; i < argc; i++) {

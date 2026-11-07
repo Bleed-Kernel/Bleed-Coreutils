@@ -26,7 +26,7 @@ static void print_size(unsigned long long size, const char *path) {
 
 static unsigned long long walk(const char *path, int depth) {
     struct stat st;
-    if (stat(path, &st) < 0) {
+    if (lstat(path, &st) < 0) {
         status = warn("cannot access '%s': %s", path, strerror(errno));
         return 0;
     }

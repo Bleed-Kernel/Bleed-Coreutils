@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     }
 
     if (optind < argc)
-        return warn("setting the hostname isnt supported, edit /initrd/etc/hostname");
+        return warn("setting the hostname isnt supported, edit /etc/hostname");
 
     char name[256];
     if (gethostname(name, sizeof(name)) < 0)
